@@ -1,0 +1,31 @@
+export type SystemCategory = 'power' | 'water' | 'health' | 'mobility' | 'comms' | 'civic' | 'digital' | 'supply';
+export type SystemNode = {
+  id: string;
+  name: string;
+  subtitle: string;
+  category: SystemCategory;
+  description: string;
+  position: { x: number; y: number };
+  resilience: number;
+  criticality: number;
+};
+export type SystemLink = { id: string; source: string; target: string; exposure: number };
+export type Scenario = { id: string; title: string; place: string; description: string; type: 'city' | 'cloud' | 'custom'; nodes: SystemNode[]; links: SystemLink[] };
+export type Intervention = { nodeId: string; boost: number };
+export type Impact = { nodeId: string; score: number; wave: number; parent: string | null };
+export type SimulationEvent = { wave: number; nodeId: string; score: number; source: string | null };
+export type SimulationRun = {
+  id: string;
+  scenarioId: string;
+  scenarioTitle: string;
+  rootId: string;
+  severity: number;
+  interventions: Intervention[];
+  impacts: Impact[];
+  events: SimulationEvent[];
+  affected: number;
+  critical: number;
+  resilienceIndex: number;
+  createdAt: string;
+};
+export const uid = () => typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);

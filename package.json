@@ -1,0 +1,36 @@
+{
+  "name": "rupturemap",
+  "version": "3.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "db:setup": "node --env-file=.env.local scripts/provision-appwrite.mjs",
+    "test:engine": "node scripts/test-engine.mjs",
+    "configure": "node scripts/configure.mjs",
+    "db:verify": "node --env-file=.env.local scripts/check-appwrite.mjs",
+    "db:setup:ci": "node scripts/provision-appwrite.mjs",
+    "db:verify:ci": "node scripts/check-appwrite.mjs"
+  },
+  "dependencies": {
+    "@xyflow/react": "12.12.0",
+    "appwrite": "29.1.0",
+    "lucide-react": "0.468.0",
+    "next": "16.0.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.0.0",
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "typescript": "5.9.3",
+    "tailwindcss": "4.1.0",
+    "@tailwindcss/postcss": "4.1.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

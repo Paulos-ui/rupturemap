@@ -1,0 +1,29 @@
+name: Provision Appwrite TablesDB
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Create tables and indexes (no npm install)
+        run: node scripts/provision-appwrite.mjs
+        env:
+          NEXT_PUBLIC_APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+          NEXT_PUBLIC_APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
+          NEXT_PUBLIC_APPWRITE_DATABASE_ID: rupturemap
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+      - name: Verify created schema
+        run: node scripts/check-appwrite.mjs
+        env:
+          NEXT_PUBLIC_APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+          NEXT_PUBLIC_APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
+          NEXT_PUBLIC_APPWRITE_DATABASE_ID: rupturemap
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}

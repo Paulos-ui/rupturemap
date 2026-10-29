@@ -1,0 +1,31 @@
+RUPTUREMAP V3 — WSL commands (exact format for your screenshot)
+
+1. First create an empty PUBLIC repository on GitHub:
+   https://github.com/new
+   Owner: paulos-ui
+   Name: rupturemap
+   Do not initialize with README/license/gitignore.
+
+2. Download rupturemap-v3.zip into your Windows Desktop, then paste:
+
+cd "/mnt/c/Users/MY PC/Desktop/rupturemap"
+
+unzip -oq "/mnt/c/Users/MY PC/Desktop/rupturemap-v3.zip" -d . && rm -f "/mnt/c/Users/MY PC/Desktop/rupturemap-v3.zip"
+
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || git init -b main
+
+git remote get-url origin >/dev/null 2>&1 || git remote add origin https://github.com/paulos-ui/rupturemap.git
+
+git add -A
+
+git commit -m "Ship RUPTUREMAP: Appwrite TablesDB and Synteq-ready deployment"
+
+git push -u origin HEAD
+
+3. OPEN GitHub and check the files. Follow CLOUD_FIRST_DEPLOY.md next.
+
+If `git push` says no repository, the GitHub repo has not been created.
+If `git commit` says 'nothing to commit', your files may already be in Git.
+If `git remote add` fails because origin points elsewhere, check `git remote -v` first.
+
+Do NOT run npm install locally for the cloud-first route.

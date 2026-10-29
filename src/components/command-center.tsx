@@ -4,7 +4,7 @@ import { Activity, AlertCircle, ArrowDownRight, ArrowRight, BarChart3, Box, Chec
 import NetworkMap, { categoryLabel } from './network-map';
 import { DEMO_SCENARIOS, cloneScenario } from '@/lib/demo';
 import { simulate } from '@/lib/engine';
-import { cloudConfigured, openGuestSession, listScenarioSnapshots, listSimulationRuns, loadScenarioSnapshot, saveScenario as persistScenario, saveSimulationRun, type ScenarioRow } from '@/lib/appwrite';
+import { configureAppwrite, openGuestSession, listScenarioSnapshots, listSimulationRuns, loadScenarioSnapshot, saveScenario as persistScenario, saveSimulationRun, type ScenarioRow } from '@/lib/appwrite';
 import type { Scenario, SimulationRun, SystemCategory, SystemLink, SystemNode } from '@/lib/types';
 import { uid } from '@/lib/types';
 
@@ -34,7 +34,7 @@ export default function CommandCenter(){
   const [snapshots,setSnapshots]=useState<Scenario[]>([]);
   const [cloudSnapshots,setCloudSnapshots]=useState<ScenarioRow[]>([]);
   const [userId,setUserId]=useState<string|null>(null);
-  const [cloudStatus,setCloudStatus]=useState<CloudStatus>(cloudConfigured?'checking':'preview');
+  const [cloudStatus,setCloudStatus]=useState<CloudStatus>('checking');
   const [busy,setBusy]=useState(false);
   const [toast,setToast]=useState<{message:string;error?:boolean}|null>(null);
   const [newName,setNewName]=useState('');
@@ -52,25 +52,43 @@ export default function CommandCenter(){
       if(local)setHistory(JSON.parse(local) as SimulationRun[]);
       if(stored)setSnapshots(JSON.parse(stored) as Scenario[]);
     }catch{/* corrupted cache should not prevent a visitor from using the demo */}
-    if(!cloudConfigured)return;
     let active=true;
-    openGuestSession().then(async user=>{
-      if(!active||!user)return;
-      // An auth session alone is NOT proof that the TablesDB database is deployed.
-      // Query both tables before showing the confirmed Appwrite status.
-      const [remoteScenarios,remoteRuns]=await Promise.allSettled([listScenarioSnapshots(user),listSimulationRuns(user)]);
-      if(!active)return;
-      if(remoteScenarios.status==='rejected'||remoteRuns.status==='rejected') {
-        setCloudStatus('error');
-        const rejected=remoteScenarios.status==='rejected'?remoteScenarios.reason:remoteRuns.status==='rejected'?remoteRuns.reason:null;
-        notify(`Appwrite login worked, but database verification failed: ${messageOf(rejected)}. Run npm run db:verify locally.`,true);
-        return;
+    void (async () => {
+      try {
+        // Fetch PUBLIC connection information from the running Synteq server.
+        // This still works when NEXT_PUBLIC_* values were unavailable during build.
+        const response = await fetch('/api/appwrite-config', {cache:'no-store'});
+        if(!response.ok) throw new Error(`Configuration endpoint returned HTTP ${response.status}`);
+        const config = await response.json() as {
+          configured:boolean;endpoint?:string;projectId?:string;databaseId?:string;missing?:string[];
+        };
+        if(!active)return;
+        if(!config.configured) {
+          setCloudStatus('preview');
+          notify(`Synteq runtime configuration missing: ${(config.missing||[]).join(', ') || 'Appwrite variables'}. Set scope to Both and redeploy.`,true);
+          return;
+        }
+        configureAppwrite({endpoint:config.endpoint||'',projectId:config.projectId||'',databaseId:config.databaseId||'rupturemap'});
+        const user = await openGuestSession();
+        if(!active)return;
+        if(!user)throw new Error('Appwrite did not create a user session.');
+        // A session alone does not prove the database is accessible.
+        const [remoteScenarios,remoteRuns]=await Promise.allSettled([listScenarioSnapshots(user),listSimulationRuns(user)]);
+        if(!active)return;
+        if(remoteScenarios.status==='rejected'||remoteRuns.status==='rejected') {
+          setCloudStatus('error');
+          const rejected=remoteScenarios.status==='rejected'?remoteScenarios.reason:remoteRuns.status==='rejected'?remoteRuns.reason:null;
+          notify(`Appwrite database verification failed: ${messageOf(rejected)}`,true);
+          return;
+        }
+        setUserId(user);
+        setCloudStatus('connected');
+        setCloudSnapshots(remoteScenarios.value);
+        setHistory(previous=>mergeRuns(remoteRuns.value,previous));
+      } catch(error) {
+        if(active){setCloudStatus('error');notify(`Appwrite connection failed: ${messageOf(error)}`,true);}
       }
-      setUserId(user);
-      setCloudStatus('connected');
-      setCloudSnapshots(remoteScenarios.value);
-      setHistory(previous=>mergeRuns(remoteRuns.value,previous));
-    }).catch(error=>{if(active){setCloudStatus('error');notify(`Appwrite connection failed: ${messageOf(error)}`,true);}});
+    })();
     return ()=>{active=false;};
   },[notify]);
   useEffect(()=>{try{localStorage.setItem('rupturemap:history',JSON.stringify(history.slice(0,50)));}catch{/* storage disabled */}},[history]);

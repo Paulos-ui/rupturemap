@@ -1,13 +1,24 @@
 import { Account, Client, ID, Permission, Query, Role, TablesDB } from 'appwrite';
 import type { Scenario, SimulationRun, SystemNode, SystemLink } from './types';
 
-const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-const databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'rupturemap';
-export const cloudConfigured = Boolean(endpoint && projectId && !projectId.includes('your_'));
-const client = cloudConfigured ? new Client().setEndpoint(endpoint!).setProject(projectId!) : null;
-const account = client ? new Account(client) : null;
-const tables = client ? new TablesDB(client) : null;
+// NEXT_PUBLIC_* values are normally baked into Next.js client bundles at build time.
+// Synteq can supply them at runtime instead; the browser receives only these
+// PUBLIC values from /api/appwrite-config (never an admin API key).
+let databaseId = 'rupturemap';
+let account: Account | null = null;
+let tables: TablesDB | null = null;
+
+export function configureAppwrite(config: {endpoint: string; projectId: string; databaseId: string}): void {
+  const endpoint = config.endpoint?.trim();
+  const projectId = config.projectId?.trim();
+  if (!endpoint || !/^https:\/\//.test(endpoint) || !projectId || projectId.includes('your_')) {
+    throw new Error('Appwrite server configuration is incomplete or invalid.');
+  }
+  const client = new Client().setEndpoint(endpoint).setProject(projectId);
+  databaseId = config.databaseId?.trim() || 'rupturemap';
+  account = new Account(client);
+  tables = new TablesDB(client);
+}
 const perms = (userId: string) => [Permission.read(Role.user(userId)), Permission.update(Role.user(userId)), Permission.delete(Role.user(userId))];
 
 export async function openGuestSession(): Promise<string | null> {

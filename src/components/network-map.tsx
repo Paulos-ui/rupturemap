@@ -1,6 +1,6 @@
 'use client';
 import { memo, useCallback, useMemo } from 'react';
-import ReactFlow, { Background, BackgroundVariant, Controls, Handle, MarkerType, Position, type Connection, type Edge, type Node, type NodeProps } from '@xyflow/react';
+import { ReactFlow, Background, BackgroundVariant, Controls, Handle, MarkerType, Position, type Connection, type Edge, type Node, type NodeProps } from '@xyflow/react';
 import { Building2, Cpu, Cross, Droplets, Layers, Radio, Ship, TrainFront, Zap } from 'lucide-react';
 import type { Scenario, SimulationRun, SystemCategory, SystemLink, SystemNode } from '@/lib/types';
 
